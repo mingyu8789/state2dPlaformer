@@ -2,82 +2,27 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    public PlayerStateMachine stateMachine { get; private set; } //초기화 값이 들어가고 바뀌는 값을 만들어주는 기계를 여기서만 건들 수 있게 넣어준다.
+    public PlayerIdleState idleState { get; private set; } //가만히 있는 스택을 여기서만 건들 수 있게 넣어준다
+    public PlayerMoveState moveState { get; private set; } //움직이는 스택을 여기서만 건들 수 있게 넣어준다
 
-    private Rigidbody2D rb;
-    private Animator Ani;
-
-    private float xinput;
-
-    [SerializeField]
-    private float speed;
-    [SerializeField]
-    private float jump;
-
-
-
-    private bool flip = true;
-
-
-    void Start()
+    private void Awake() //이건 초기화 값이 들어가는 곳이다
     {
-        rb = GetComponent<Rigidbody2D>();
-        Ani = GetComponentInChildren<Animator>();
+
+        stateMachine = new PlayerStateMachine(); //초기화 값이 들어간다
+
+        idleState = new PlayerIdleState(this, stateMachine, "Idle"); //가만히 있는 스택을 넣어준다
+        moveState = new PlayerMoveState(this, stateMachine, "Move"); //움직이는 스택을 넣어준다
+    }
+
+    private void Start()
+    {
+        stateMachine.Initialize(idleState); //게임 시작시 처음상태를 대기 상태로 설정
     }
 
 
-    void Update()
+    private void Update()
     {
-        xinput = Input.GetAxisRaw("Horizontal");
-        input();
-        aniContoller();
-        FlipController();
-
-
+        stateMachine.currentState.Update(); //업데이트는 스택에 있는 스택을 업데이트 해준다
     }
-
-    private void input()
-    {
-        Move();
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Jump();
-        }
-    }
-
-    private void Move()
-    {
-        rb.linearVelocity = new Vector2(xinput * speed , rb.linearVelocityY);
-    }
-
-    private void Jump()
-    {
-        rb.linearVelocity = new Vector2(rb.linearVelocityX , jump);
-    }
-
-    private void aniContoller()
-    {
-        bool isMove = rb.linearVelocityX != 0;   //기본상태가 아니라면 참
-
-        Ani.SetBool("isMove", isMove);
-    }
-
-    private void Flip()
-    {
-        flip = !flip;   //!는 참이면 거짓으로 거짓이면 참으로 바꿈
-        transform.Rotate(0 , 180 , 0);
-    }
-
-    private void FlipController()
-    {
-        if(rb.linearVelocityX > 0 && !flip)
-        {
-            Flip();
-        }
-        if(rb.linearVelocityX < 0 && flip)
-        {
-            Flip();
-        }
-    }
-  
 }
