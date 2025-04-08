@@ -17,11 +17,13 @@ public class PlayerMoveState : PlayerGroundedState
     {
         base.Update();
 
-        player.SetVelocity(xInput * player.moveSpeed, player.rb.linearVelocityY);
 
-        
-        if(xInput == 0)
-            stateMachine.ChangeState(player.idleState); // xInput이 0일 경우 대기 상태로 전환
+        player.SetVelocity(xInput*player.moveSpeed, rb.linearVelocityY);
+
+        if (xInput == 0 || player.IsWallDetected())
+            stateMachine.ChangeState(player.idleState);
+
+
 
     }
 

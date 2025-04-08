@@ -10,13 +10,25 @@ public class PlayerIdleState : PlayerGroundedState
     public override void Enter()
     {
         base.Enter();
+
+        player.ZeroVelocity();
     }
     public override void Update()
     {
         base.Update();
 
-        if (xInput != 0)
-            stateMachine.ChangeState(player.moveState); // xInput이 0이 아닐 경우 이동 상태로 전환
+
+
+        if (xInput == player.facingDir && player.IsWallDetected())
+            return;
+
+
+
+
+        if (xInput != 0 && !player.isBusy)
+            stateMachine.ChangeState(player.moveState);
+
+
 
     }
     public override void Exit()
