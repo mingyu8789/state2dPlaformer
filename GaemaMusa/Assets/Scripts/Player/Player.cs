@@ -1,8 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using static UnityEngine.EventSystems.EventTrigger;
 
 
-public class Player : MonoBehaviour
+public class Player : Entity
 {
 
     [Header("공격 디테일")]
@@ -21,21 +22,9 @@ public class Player : MonoBehaviour
     public float dashDuration;
     public float dashDir { get; private set; }
 
-    [Header("충돌 정보")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckDistance;
-    [SerializeField] private Transform wallCheck;
-    [SerializeField] private float wallCheckDistance;
-    [SerializeField] private LayerMask whatIsGround;
-
-    public int facingDir { get; private set; } = 1;
-    private bool facingRight = true;
 
 
-    #region Components
-    public Animator anim { get; private set; }
-    public Rigidbody2D rb { get; private set; }
-    #endregion
+
 
     #region States
     // 플레이어의 상태를 관리하는 상태 머신
@@ -48,15 +37,17 @@ public class Player : MonoBehaviour
     public PlayerAirState airState { get; private set; }
     public PlayerDashState dashState { get; private set; }
 
-    public PlayerWallSlideState wallSlide { get;  private set;}
+    public PlayerWallSlideState wallSlide { get; private set; }
     public PlayerWallJumpState wallJump { get; private set; }
     public PlayerPrimaryAttackState primaryAttack { get; private set; }
 
     #endregion
-    
 
-    private void Awake()
+
+    protected override void Awake()
     {
+        base.Awake();
+
         // 상태 머신 인스턴스 생성
         stateMachine = new PlayerStateMachine();
 
@@ -64,7 +55,7 @@ public class Player : MonoBehaviour
         idleState = new PlayerIdleState(this, stateMachine, "Idle");
         moveState = new PlayerMoveState(this, stateMachine, "Move");
         jumpState = new PlayerJumpState(this, stateMachine, "Jump");
-        airState  = new PlayerAirState(this, stateMachine, "Jump");
+        airState = new PlayerAirState(this, stateMachine, "Jump");
         dashState = new PlayerDashState(this, stateMachine, "Dash");
         wallSlide = new PlayerWallSlideState(this, stateMachine, "WallSlide");
         wallJump = new PlayerWallJumpState(this, stateMachine, "Jump");
@@ -73,26 +64,25 @@ public class Player : MonoBehaviour
 
     }
 
-    private void Start()
+    protected override void Start()
     {
 
-        anim = GetComponentInChildren<Animator>();
-        rb = GetComponent<Rigidbody2D>();
+        base.Start();
 
         // 게임 시작 시 초기 상태를 대기 상태(idleState)로 설정
         stateMachine.Initialize(idleState);
 
 
-      
+
 
     }
 
 
-   
 
-    private void Update()
+
+    protected override void Update()
     {
-     
+        base.Update();
         stateMachine.currentState.Update();
         CheckForDashInput();
     }
@@ -102,9 +92,9 @@ public class Player : MonoBehaviour
     {
         isBusy = true;
 
-       
+
         yield return new WaitForSeconds(_seconds);
-      
+
         isBusy = false;
     }
 
@@ -125,7 +115,7 @@ public class Player : MonoBehaviour
 
 
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && dashUsageTimer<0)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && dashUsageTimer < 0)
         {
 
             dashUsageTimer = dashCooldown;
@@ -138,49 +128,13 @@ public class Player : MonoBehaviour
 
             stateMachine.ChangeState(dashState);
         }
-           
-    }
-
-    #region 속력
-    public void ZeroVelocity() => rb.linearVelocity = new Vector2(0, 0);
-
-    public void SetVelocity(float _xVelocity, float _yVelocity)
-    {
-        rb.linearVelocity = new Vector2(_xVelocity, _yVelocity);
-        FlipController(_xVelocity);
-    }
-    #endregion
-
-    #region 충돌
-    public bool IsGroundDetected() => Physics2D.Raycast(groundCheck.position, Vector2.down, groundCheckDistance, whatIsGround);
-    public bool IsWallDetected() => Physics2D.Raycast(wallCheck.position, Vector2.right * facingDir, wallCheckDistance, whatIsGround);
-
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(groundCheck.position, new Vector3(groundCheck.position.x, groundCheck.position.y - groundCheckDistance));
-        Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y));
-    }
-    #endregion
-
-    #region 플립
-    public void Flip()
-    {
-        facingDir = facingDir * -1;
-        facingRight = !facingRight;
-        transform.Rotate(0, 180, 0);
-    }
-
-
-    public void FlipController(float _x)
-    {
-        if (_x > 0 && !facingRight)
-            Flip();
-        else if (_x< 0 && facingRight)
-            Flip();
 
     }
 
-    #endregion
+
+
+
+
+
 
 }
