@@ -1,36 +1,34 @@
 using System.Collections;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 
 
 public class Player : Entity
 {
 
-    [Header("°ø°İ µğÅ×ÀÏ")]
+    [Header("ê³µê²© ë””í…Œì¼")]
     public Vector2[] attackMovement;
+    public float counterAttackDuration = 0.2f;
 
 
     public bool isBusy { get; private set; }
-    [Header("ÀÌµ¿ Á¤º¸")]
+    [Header("ì´ë™ ì •ë³´")]
     public float moveSpeed = 12f;
     public float jumpForce;
 
-    [Header("´ë½Ã Á¤º¸")]
-    [SerializeField] private float dashCooldown;
-    private float dashUsageTimer;
+    [Header("ëŒ€ì‹œ ì •ë³´")]
     public float dashSpeed;
     public float dashDuration;
     public float dashDir { get; private set; }
 
 
-
+    public SkillManager skill { get; private set; }
 
 
     #region States
-    // ÇÃ·¹ÀÌ¾îÀÇ »óÅÂ¸¦ °ü¸®ÇÏ´Â »óÅÂ ¸Ó½Å
+    // í”Œë ˆì´ì–´ì˜ ìƒíƒœë¥¼ ê´€ë¦¬í•˜ëŠ” ìƒíƒœ ë¨¸ì‹ 
     public PlayerStateMachine stateMachine { get; private set; }
 
-    // ÇÃ·¹ÀÌ¾îÀÇ »óÅÂ (´ë±â »óÅÂ, ÀÌµ¿ »óÅÂ)
+    // í”Œë ˆì´ì–´ì˜ ìƒíƒœ (ëŒ€ê¸° ìƒíƒœ, ì´ë™ ìƒíƒœ)
     public PlayerIdleState idleState { get; private set; }
     public PlayerMoveState moveState { get; private set; }
     public PlayerJumpState jumpState { get; private set; }
@@ -40,6 +38,10 @@ public class Player : Entity
     public PlayerWallSlideState wallSlide { get; private set; }
     public PlayerWallJumpState wallJump { get; private set; }
     public PlayerPrimaryAttackState primaryAttack { get; private set; }
+    public PlayerCounterAttackState counterAttack { get; private set; }
+
+    public PlayerAimSwordState aimSword { get; private set; }
+    public PlayerCatchSwordState catchSword { get; private set; }
 
     #endregion
 
@@ -48,10 +50,10 @@ public class Player : Entity
     {
         base.Awake();
 
-        // »óÅÂ ¸Ó½Å ÀÎ½ºÅÏ½º »ı¼º
+        // ìƒíƒœ ë¨¸ì‹  ì¸ìŠ¤í„´ìŠ¤ ìƒì„±
         stateMachine = new PlayerStateMachine();
 
-        // °¢ »óÅÂ ÀÎ½ºÅÏ½º »ı¼º (this: ÇÃ·¹ÀÌ¾î °´Ã¼, stateMachine: »óÅÂ ¸Ó½Å, "Idle"/"Move": »óÅÂ ÀÌ¸§)
+        // ê° ìƒíƒœ ì¸ìŠ¤í„´ìŠ¤ ìƒì„± (this: í”Œë ˆì´ì–´ ê°ì²´, stateMachine: ìƒíƒœ ë¨¸ì‹ , "Idle"/"Move": ìƒíƒœ ì´ë¦„)
         idleState = new PlayerIdleState(this, stateMachine, "Idle");
         moveState = new PlayerMoveState(this, stateMachine, "Move");
         jumpState = new PlayerJumpState(this, stateMachine, "Jump");
@@ -61,6 +63,10 @@ public class Player : Entity
         wallJump = new PlayerWallJumpState(this, stateMachine, "Jump");
 
         primaryAttack = new PlayerPrimaryAttackState(this, stateMachine, "Attack");
+        counterAttack = new PlayerCounterAttackState(this, stateMachine, "CounterAttack");
+
+        aimSword = new PlayerAimSwordState(this, stateMachine, "AimSword");
+        catchSword = new PlayerCatchSwordState(this, stateMachine, "CatchSword");
 
     }
 
@@ -69,7 +75,10 @@ public class Player : Entity
 
         base.Start();
 
-        // °ÔÀÓ ½ÃÀÛ ½Ã ÃÊ±â »óÅÂ¸¦ ´ë±â »óÅÂ(idleState)·Î ¼³Á¤
+
+        skill = SkillManager.instance;
+
+        // ê²Œì„ ì‹œì‘ ì‹œ ì´ˆê¸° ìƒíƒœë¥¼ ëŒ€ê¸° ìƒíƒœ(idleState)ë¡œ ì„¤ì •
         stateMachine.Initialize(idleState);
 
 
@@ -108,17 +117,15 @@ public class Player : Entity
     private void CheckForDashInput()
     {
 
-        //if (IsWallDetected())
-        //    return;
-
-        dashUsageTimer -= Time.deltaTime;
+        if (IsWallDetected())
+            return;
 
 
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && dashUsageTimer < 0)
+
+
+        if (Input.GetKeyDown(KeyCode.LeftShift) && SkillManager.instance.dash.CanUseSkill())
         {
-
-            dashUsageTimer = dashCooldown;
 
 
             dashDir = Input.GetAxisRaw("Horizontal");

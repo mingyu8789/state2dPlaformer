@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerGroundedState : PlayerState
 {
-    public PlayerGroundedState(Player _player, PlayerStateMachine _stateMachine, string _animBoolName) 
+    public PlayerGroundedState(Player _player, PlayerStateMachine _stateMachine, string _animBoolName)
         : base(_player, _stateMachine, _animBoolName)
     {
     }
@@ -20,9 +20,18 @@ public class PlayerGroundedState : PlayerState
     public override void Update()
     {
         base.Update();
-
         if (Input.GetKeyDown(KeyCode.Mouse0))
             stateMachine.ChangeState(player.primaryAttack);
+
+        if (Input.GetMouseButtonDown(1))
+            stateMachine.ChangeState(player.aimSword);
+
+
+
+        if (Input.GetKeyDown(KeyCode.R))
+            stateMachine.ChangeState(player.counterAttack);
+
+
 
 
         if (!player.IsGroundDetected())
