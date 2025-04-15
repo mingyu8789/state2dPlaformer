@@ -64,6 +64,8 @@ public class Player : MonoBehaviour
         FlipController(xlineVelocity);
     }
 
+    public bool IsGround(Physics2D.
+
     public void OnDrawGizmos()
     {
         Gizmos.DrawLine(Ground.position, new Vector3(Ground.position.x * GroundLine, Ground.position.y));
